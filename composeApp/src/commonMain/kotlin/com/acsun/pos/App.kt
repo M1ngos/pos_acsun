@@ -1,47 +1,59 @@
 package com.acsun.pos
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.safeContentPadding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
-
-import pos_acsun.composeapp.generated.resources.Res
-import pos_acsun.composeapp.generated.resources.compose_multiplatform
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.acsun.pos.di.appModule
+import com.acsun.pos.di.common.Context
+import com.acsun.pos.presentation.SharedViewModel
+import com.acsun.pos.presentation.navigation.AppNavigation
+import com.acsun.pos.presentation.theme.AppTheme
+import com.acsun.pos.presentation.ui.auth.AuthNavigation
+import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 
 @Composable
-@Preview
-fun App() {
-    MaterialTheme {
-        var showContent by remember { mutableStateOf(false) }
-        Column(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.primaryContainer)
-                .safeContentPadding()
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Button(onClick = { showContent = !showContent }) {
-                Text("Click me!")
-            }
-            AnimatedVisibility(showContent) {
-                val greeting = remember { Greeting().greet() }
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+fun App(context: Context?, onToggleFullscreen: ((Boolean) -> Unit)? = null) {
+    KoinApplication(application = {
+        modules(appModule(context))
+    }) {
+        AppTheme {
+
+            val navController = rememberNavController()
+            val viewModel: SharedViewModel = koinInject()
+
+//            LaunchedEffect(key1 = viewModel.tokenManager.state.value.isTokenAvailable) {
+//                if (!viewModel.tokenManager.state.value.isTokenAvailable) {
+//                    navController.popBackStack()
+//                    navController.navigate(AppNavigation.Splash)
+//                }
+//            }
+            
+            Box(modifier = Modifier.fillMaxSize()) {
+                NavHost(
+                    navController = navController,
+                    startDestination = AppNavigation.Auth,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    Image(painterResource(Res.drawable.compose_multiplatform), null)
-                    Text("Compose: $greeting")
+                    composable<AppNavigation.Auth> {
+                        AuthNavigation(
+                            onToggleFullscreen = onToggleFullscreen,
+                            navigateToMain = {
+                                navController.popBackStack()
+                                navController.navigate(AppNavigation.Main)
+                            }
+                        )
+                    }
+
+                    composable<AppNavigation.Main> {
+                        Text("Yay here in!")
+                    }
                 }
             }
         }
